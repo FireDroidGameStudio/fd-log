@@ -14,13 +14,15 @@ enum LogLevel {
 
 
 var DefaultColors: Dictionary[LogLevel, LogStyle] = {
-	LogLevel.TRACE: LogStyle.new(Color.GRAY),
-	LogLevel.DEBUG: LogStyle.new(Color.WHITE),
-	LogLevel.INFO: LogStyle.new(Color.DEEP_SKY_BLUE),
-	LogLevel.NOTICE: LogStyle.new(Color.CYAN),
-	LogLevel.WARNING: LogStyle.new(Color.YELLOW),
-	LogLevel.ERROR: LogStyle.new(Color.RED),
-	LogLevel.CRITICAL: LogStyle.new(Color.WHITE, Color.RED, Color.TRANSPARENT, true),
+	LogLevel.TRACE: LogStyle.new().apply_color(Color.GRAY),
+	LogLevel.DEBUG: LogStyle.new().apply_color(Color.WHITE),
+	LogLevel.INFO: LogStyle.new().apply_color(Color.DEEP_SKY_BLUE),
+	LogLevel.NOTICE: LogStyle.new().apply_color(Color.CYAN).apply_bold(true),
+	LogLevel.WARNING: LogStyle.new().apply_color(Color.YELLOW),
+	LogLevel.ERROR: LogStyle.new().apply_color(Color.RED),
+	LogLevel.CRITICAL: (
+		LogStyle.new().apply_color(Color.WHITE).apply_bg_color(Color.RED).apply_bold(true)
+	),
 }
 
 
@@ -89,12 +91,12 @@ func is_level_enabled(level: LogLevel) -> bool:
 func get_log_level_style(level: LogLevel) -> LogStyle:
 	return ProjectSettings.get_setting(
 		get_log_level_style_setting_path(level),
-		DefaultColors.get(level, LogStyle.new(Color.GRAY))
+		DefaultColors.get(level, LogStyle.new().apply_color(Color.GRAY))
 	)
 
 
 class LogStyle:
-	var text_color: Color = Color.GRAY
+	var color: Color = Color.GRAY
 	var bg_color: Color = Color.TRANSPARENT
 	var fg_color: Color = Color.TRANSPARENT
 	var bold: bool = false
@@ -102,26 +104,44 @@ class LogStyle:
 	var underlined: bool = false
 	var strikethrough: bool = false
 
-	func _init(
-		text_color: Color = Color.GRAY,
-		bg_color: Color = Color.TRANSPARENT,
-		fg_color: Color = Color.TRANSPARENT,
-		bold: bool = false,
-		italic: bool = false,
-		underlined: bool = false,
-		strikethrough: bool = false
-	) -> void:
-		self.text_color = text_color
+
+	func apply_color(color: Color) -> LogStyle:
+		self.color = color
+		return self
+
+
+	func apply_bg_color(bg_color: Color) -> LogStyle:
 		self.bg_color = bg_color
+		return self
+
+
+	func apply_fg_color(fg_color: Color) -> LogStyle:
 		self.fg_color = fg_color
+		return self
+
+
+	func apply_bold(bold: bool) -> LogStyle:
 		self.bold = bold
+		return self
+
+
+	func apply_italic(italic: bool) -> LogStyle:
 		self.italic = italic
+		return self
+
+
+	func apply_underlined(underlined: bool) -> LogStyle:
 		self.underlined = underlined
+		return self
+
+
+	func apply_strikethrough(strikethrough: bool) -> LogStyle:
 		self.strikethrough = strikethrough
+		return self
 
 
 	func get_stylized_text(text: String) -> String:
-		var style_string_begin: String = "[color=#%s]" % [text_color.to_html()]
+		var style_string_begin: String = "[color=#%s]" % [color.to_html()]
 		var style_string_end: String = "[/color]"
 		if not is_zero_approx(bg_color.a):
 			style_string_begin += "[bgcolor=#%s]" % [bg_color.to_html()]
