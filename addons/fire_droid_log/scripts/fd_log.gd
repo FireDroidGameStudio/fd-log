@@ -91,7 +91,7 @@ func is_level_enabled(level: LogLevel) -> bool:
 func get_log_level_style(level: LogLevel) -> LogStyle:
 	return ProjectSettings.get_setting(
 		get_log_level_style_setting_path(level),
-		DefaultColors.get(level, LogStyle.new().apply_color(Color.GRAY))
+		DefaultColors.get(level, LogStyle.new())
 	)
 
 
