@@ -14,6 +14,10 @@ config/name="Fire-Droid Log"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+FDLog="*res://addons/fire_droid_log/scripts/fd_log.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/fire_droid_log/plugin.cfg")
