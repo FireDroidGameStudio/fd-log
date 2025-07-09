@@ -13,16 +13,27 @@ enum LogLevel {
 }
 
 
-var DefaultColors: Dictionary[LogLevel, LogStyle] = {
-	LogLevel.TRACE: LogStyle.new().apply_color(Color.GRAY),
-	LogLevel.DEBUG: LogStyle.new().apply_color(Color.WHITE),
-	LogLevel.INFO: LogStyle.new().apply_color(Color.DEEP_SKY_BLUE),
-	LogLevel.NOTICE: LogStyle.new().apply_color(Color.CYAN).apply_bold(true),
-	LogLevel.WARNING: LogStyle.new().apply_color(Color.YELLOW),
-	LogLevel.ERROR: LogStyle.new().apply_color(Color.RED),
-	LogLevel.CRITICAL: (
-		LogStyle.new().apply_color(Color.WHITE).apply_bg_color(Color.RED).apply_bold(true)
-	),
+const DEFAULT_COLOR: Color = Color.GRAY
+const DEFAULT_BG_COLOR: Color = Color.TRANSPARENT
+const DEFAULT_FG_COLOR: Color = Color.TRANSPARENT
+const DEFAULT_BOLD: bool = false
+const DEFAULT_ITALIC: bool = false
+const DEFAULT_UNDERLINED: bool = false
+const DEFAULT_STRIKETHROUGH: bool = false
+
+
+var DefaultColors: Dictionary[LogLevel, Dictionary] = {
+	LogLevel.TRACE: { &"color": Color.GRAY, &"italic": true },
+	LogLevel.DEBUG: { &"color": Color.WHITE },
+	LogLevel.INFO: { &"color": Color.DEEP_SKY_BLUE },
+	LogLevel.NOTICE: { &"color": Color.CYAN, &"bold": true },
+	LogLevel.WARNING: { &"color": Color.YELLOW },
+	LogLevel.ERROR: { &"color": Color.RED },
+	LogLevel.CRITICAL: {
+		&"color": Color.WHITE,
+		&"bg_color": Color.RED,
+		&"bold": true,
+	},
 }
 
 
@@ -89,20 +100,91 @@ func is_level_enabled(level: LogLevel) -> bool:
 
 
 func get_log_level_style(level: LogLevel) -> LogStyle:
-	return ProjectSettings.get_setting(
-		get_log_level_style_setting_path(level),
-		DefaultColors.get(level, LogStyle.new())
-	)
+	var style_root: String = get_log_level_style_setting_path(level)
+	var args: Dictionary[StringName, Variant] = {
+		&"color": ProjectSettings.get_setting(
+			style_root + "/color", DefaultColors[level].get(&"color")
+		),
+		&"bg_color": ProjectSettings.get_setting(
+			style_root + "/bg_color", DefaultColors[level].get(&"bg_color")
+		),
+		&"fg_color": ProjectSettings.get_setting(
+			style_root + "/fg_color", DefaultColors[level].get(&"fg_color")
+		),
+		&"bold": ProjectSettings.get_setting(
+			style_root + "/bold", DefaultColors[level].get(&"bold")
+		),
+		&"italic": ProjectSettings.get_setting(
+			style_root + "/italic", DefaultColors[level].get(&"italic")
+		),
+		&"underlined": ProjectSettings.get_setting(
+			style_root + "/underlined", DefaultColors[level].get(&"underlined")
+		),
+		&"strikethrough": ProjectSettings.get_setting(
+			style_root + "/strikethrough", DefaultColors[level].get(&"strikethrough")
+		),
+	}
+	for key: StringName in args.keys():
+		if args.get(key) == null:
+			args.erase(key)
+	var style: LogStyle = LogStyle.create(args)
+	return style
 
 
-class LogStyle:
-	var color: Color = Color.GRAY
-	var bg_color: Color = Color.TRANSPARENT
-	var fg_color: Color = Color.TRANSPARENT
-	var bold: bool = false
-	var italic: bool = false
-	var underlined: bool = false
-	var strikethrough: bool = false
+class LogStyle extends Resource:
+	var color: Color = DEFAULT_COLOR
+	var bg_color: Color = DEFAULT_BG_COLOR
+	var fg_color: Color = DEFAULT_FG_COLOR
+	var bold: bool = DEFAULT_BOLD
+	var italic: bool = DEFAULT_ITALIC
+	var underlined: bool = DEFAULT_UNDERLINED
+	var strikethrough: bool = DEFAULT_STRIKETHROUGH
+
+
+	func _init(
+		color: Color = DEFAULT_COLOR,
+		bg_color: Color = DEFAULT_BG_COLOR,
+		fg_color: Color = DEFAULT_FG_COLOR,
+		bold: bool = DEFAULT_BOLD,
+		italic: bool = DEFAULT_ITALIC,
+		underlined: bool = DEFAULT_UNDERLINED,
+		strikethrough: bool = DEFAULT_STRIKETHROUGH
+	) -> void:
+		self.color = color
+		self.bg_color = bg_color
+		self.fg_color = fg_color
+		self.bold = bold
+		self.italic = italic
+		self.underlined = underlined
+		self.strikethrough = strikethrough
+
+
+	static func create(args: Dictionary) -> LogStyle:
+		return LogStyle.new(
+			args.get(&"color", DEFAULT_COLOR),
+			args.get(&"bg_color", DEFAULT_BG_COLOR),
+			args.get(&"fg_color", DEFAULT_FG_COLOR),
+			args.get(&"bold", DEFAULT_BOLD),
+			args.get(&"italic", DEFAULT_ITALIC),
+			args.get(&"underlined", DEFAULT_UNDERLINED),
+			args.get(&"strikethrough", DEFAULT_STRIKETHROUGH)
+		)
+
+
+	func is_equal_to(style: LogStyle) -> bool:
+		const PROPERTIES: Array[StringName] = [
+			&"color",
+			&"bg_color",
+			&"fg_color",
+			&"bold",
+			&"italic",
+			&"underlined",
+			&"strikethrough"
+		]
+		for property: StringName in PROPERTIES:
+			if not (get(property) == style.get(property)):
+				return false
+		return true
 
 
 	func apply_color(color: Color) -> LogStyle:
