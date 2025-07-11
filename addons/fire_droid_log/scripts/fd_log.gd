@@ -11,6 +11,7 @@ enum LogLevel {
 	ERROR,
 	CRITICAL,
 }
+const SettingPath = preload("res://addons/fire_droid_log/scripts/setting_path.gd")
 
 
 const DEFAULT_COLOR: Color = Color.GRAY
@@ -21,8 +22,18 @@ const DEFAULT_ITALIC: bool = false
 const DEFAULT_UNDERLINED: bool = false
 const DEFAULT_STRIKETHROUGH: bool = false
 
+const DEFAULT_SETTINGS: Dictionary[StringName, Variant] = {
+	&"color": DEFAULT_COLOR,
+	&"bg_color": DEFAULT_BG_COLOR,
+	&"fg_color": DEFAULT_FG_COLOR,
+	&"bold": DEFAULT_BOLD,
+	&"italic": DEFAULT_ITALIC,
+	&"underlined": DEFAULT_UNDERLINED,
+	&"strikethrough": DEFAULT_STRIKETHROUGH,
+}
 
-var DefaultColors: Dictionary[LogLevel, Dictionary] = {
+
+var DefaultStyle: Dictionary[LogLevel, Dictionary] = {
 	LogLevel.TRACE: { &"color": Color.GRAY, &"italic": true },
 	LogLevel.DEBUG: { &"color": Color.WHITE },
 	LogLevel.INFO: { &"color": Color.DEEP_SKY_BLUE },
@@ -38,7 +49,7 @@ var DefaultColors: Dictionary[LogLevel, Dictionary] = {
 
 
 func _init() -> void:
-	DefaultColors.make_read_only()
+	DefaultStyle.make_read_only()
 
 
 func _ready() -> void:
@@ -53,30 +64,11 @@ func _physics_process(_delta: float) -> void:
 	pass
 
 
-func get_enable_log_level_setting_path(level: LogLevel) -> String:
-	const LOG_LEVEL_SETTING_PATH: String = "FDLog/log_level/"
-	return (
-		LOG_LEVEL_SETTING_PATH + "enable_" + LogLevel.keys()[level].to_lower()
-	)
-
-
-func get_log_level_style_setting_path(level: LogLevel) -> String:
-	const LOG_LEVEL_STYLE_SETTING_PATH: String = "FDLog/log_style/"
-	return (
-		LOG_LEVEL_STYLE_SETTING_PATH + LogLevel.keys()[level].to_lower() + "_style"
-	)
-
-
-func get_print_log_level_setting_path() -> String:
-	const PRINT_LOG_LEVEL_SETTING_PATH: String = "FDLog/log_style/print_log_level"
-	return PRINT_LOG_LEVEL_SETTING_PATH
-
-
 func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 	if not is_level_enabled(level):
 		return
 	var timestamp: String = Time.get_time_string_from_system()
-	var style: LogStyle = get_log_level_style(level)
+	var style: LogStyle = get_log_style(level)
 	if can_print_log_level():
 		var level_string: String = LogLevel.keys().get(level)
 		message = "[%s]: %s" % [level_string, message]
@@ -88,47 +80,34 @@ func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 
 
 func can_print_log_level() -> bool:
-	return (
-		ProjectSettings.get_setting(get_print_log_level_setting_path(), true)
-	)
+	return ProjectSettings.get_setting(SettingPath.PRINT_LOG_LEVEL, true)
 
 
 func is_level_enabled(level: LogLevel) -> bool:
+	return ProjectSettings.get_setting(SettingPath.ENABLE_LEVEL[level], true)
+
+
+func get_default_style_setting(level: LogLevel, setting: StringName) -> Variant:
+	return DefaultStyle[level].get(setting, DEFAULT_SETTINGS.get(setting))
+
+
+func get_style_setting(level: LogLevel, setting: StringName) -> Variant:
 	return ProjectSettings.get_setting(
-		get_enable_log_level_setting_path(level), true
+		SettingPath.LOG_STYLE[level][setting],
+		get_default_style_setting(level, setting)
 	)
 
 
-func get_log_level_style(level: LogLevel) -> LogStyle:
-	var style_root: String = get_log_level_style_setting_path(level)
-	var args: Dictionary[StringName, Variant] = {
-		&"color": ProjectSettings.get_setting(
-			style_root + "/color", DefaultColors[level].get(&"color")
-		),
-		&"bg_color": ProjectSettings.get_setting(
-			style_root + "/bg_color", DefaultColors[level].get(&"bg_color")
-		),
-		&"fg_color": ProjectSettings.get_setting(
-			style_root + "/fg_color", DefaultColors[level].get(&"fg_color")
-		),
-		&"bold": ProjectSettings.get_setting(
-			style_root + "/bold", DefaultColors[level].get(&"bold")
-		),
-		&"italic": ProjectSettings.get_setting(
-			style_root + "/italic", DefaultColors[level].get(&"italic")
-		),
-		&"underlined": ProjectSettings.get_setting(
-			style_root + "/underlined", DefaultColors[level].get(&"underlined")
-		),
-		&"strikethrough": ProjectSettings.get_setting(
-			style_root + "/strikethrough", DefaultColors[level].get(&"strikethrough")
-		),
-	}
-	for key: StringName in args.keys():
-		if args.get(key) == null:
-			args.erase(key)
-	var style: LogStyle = LogStyle.create(args)
-	return style
+func get_log_style(level: LogLevel) -> LogStyle:
+	return LogStyle.new(
+		get_style_setting(level, &"color"),
+		get_style_setting(level, &"bg_color"),
+		get_style_setting(level, &"fg_color"),
+		get_style_setting(level, &"bold"),
+		get_style_setting(level, &"italic"),
+		get_style_setting(level, &"underlined"),
+		get_style_setting(level, &"strikethrough"),
+	)
 
 
 class LogStyle extends Resource:

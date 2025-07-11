@@ -4,14 +4,10 @@ extends EditorPlugin
 
 func _enter_tree() -> void:
 	add_autoload_singleton("FDLog", "res://addons/fire_droid_log/scripts/fd_log.gd")
-	_setup_custom_setting(FDLog.get_print_log_level_setting_path(), TYPE_BOOL, true)
+	_setup_custom_setting(FDLog.SettingPath.PRINT_LOG_LEVEL, TYPE_BOOL, true)
 	for level: FDLog.LogLevel in FDLog.LogLevel.values():
-		_setup_custom_setting(
-			FDLog.get_enable_log_level_setting_path(level), TYPE_BOOL, true
-		)
-		var style_root_path: String = FDLog.get_log_level_style_setting_path(level)
-		_setup_style_color_properties(level, style_root_path)
-		_setup_style_flags_properties(level, style_root_path)
+		_setup_custom_setting(FDLog.SettingPath.ENABLE_LEVEL[level], TYPE_BOOL, true)
+		_setup_style_settings(level)
 	pass
 
 
@@ -41,35 +37,14 @@ func _setup_custom_setting(
 	ProjectSettings.set_as_basic(path, true)
 
 
-func _setup_style_color_properties(level: FDLog.LogLevel, style_root_path: String) -> void:
-	_setup_custom_setting(
-		style_root_path + "/color", TYPE_COLOR,
-		FDLog.DefaultColors[level].get(&"color", FDLog.DEFAULT_COLOR)
-	)
-	_setup_custom_setting(
-		style_root_path + "/bg_color", TYPE_COLOR,
-		FDLog.DefaultColors[level].get(&"bg_color", FDLog.DEFAULT_BG_COLOR)
-	)
-	_setup_custom_setting(
-		style_root_path + "/fg_color", TYPE_COLOR,
-		FDLog.DefaultColors[level].get(&"fg_color", FDLog.DEFAULT_FG_COLOR)
-	)
-
-
-func _setup_style_flags_properties(level: FDLog.LogLevel, style_root_path: String) -> void:
-	_setup_custom_setting(
-		style_root_path + "/bold", TYPE_BOOL,
-		FDLog.DefaultColors[level].get(&"bold", FDLog.DEFAULT_BOLD)
-	)
-	_setup_custom_setting(
-		style_root_path + "/italic", TYPE_BOOL,
-		FDLog.DefaultColors[level].get(&"italic", FDLog.DEFAULT_ITALIC)
-	)
-	_setup_custom_setting(
-		style_root_path + "/underlined", TYPE_BOOL,
-		FDLog.DefaultColors[level].get(&"underlined", FDLog.DEFAULT_UNDERLINED)
-	)
-	_setup_custom_setting(
-		style_root_path + "/strikethrough", TYPE_BOOL,
-		FDLog.DefaultColors[level].get(&"strikethrough", FDLog.DEFAULT_STRIKETHROUGH)
-	)
+func _setup_style_settings(level: FDLog.LogLevel) -> void:
+	for setting_name: StringName in [&"color", &"bg_color", &"fg_color"]:
+		_setup_custom_setting(
+			FDLog.SettingPath.LOG_STYLE[level][setting_name], TYPE_COLOR,
+			FDLog.get_style_setting(level, setting_name)
+		)
+	for setting_name: StringName in [&"bold", &"italic", &"underlined", &"strikethrough"]:
+		_setup_custom_setting(
+			FDLog.SettingPath.LOG_STYLE[level][setting_name], TYPE_BOOL,
+			FDLog.get_style_setting(level, setting_name)
+		)
