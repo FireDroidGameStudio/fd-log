@@ -10,7 +10,7 @@ func _enter_tree() -> void:
 		_setup_style_settings(level)
 		_setup_custom_setting(
 			FDLog.SettingPath.LOG_FILE_ROOT_DIR,
-			TYPE_STRING, "", { &"hint": PROPERTY_HINT_DIR }
+			TYPE_STRING, "", { &"hint": PROPERTY_HINT_GLOBAL_DIR }
 		)
 	pass
 
