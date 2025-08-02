@@ -2,6 +2,7 @@ extends Node
 
 
 const LOG_FILE_ROOT_DIR: String = "FDLog/log_config/log_file/log_file_root_dir"
+const LOG_FILE_NAME_PREFIX: String = "FDLog/log_config/log_file/log_file_name_prefix"
 const PRINT_LOG_LEVEL: String = "FDLog/log_style/print_log_level"
 const ENABLE_LEVEL: Dictionary[FDLog.LogLevel, String] = {
 	FDLog.LogLevel.TRACE: _ROOT_PATH_ENABLE_LEVEL + "enable_trace",

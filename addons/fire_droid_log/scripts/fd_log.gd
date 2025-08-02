@@ -14,6 +14,9 @@ enum LogLevel {
 const SettingPath = preload("res://addons/fire_droid_log/scripts/setting_path.gd")
 
 
+const DEFAULT_LOG_FILE_NAME_PREFIX: String = "log_file"
+const LOG_FILE_EXTENSION: String = "log"
+
 const DEFAULT_COLOR: Color = Color.GRAY
 const DEFAULT_BG_COLOR: Color = Color.TRANSPARENT
 const DEFAULT_FG_COLOR: Color = Color.TRANSPARENT
@@ -47,6 +50,8 @@ var DefaultStyle: Dictionary[LogLevel, Dictionary] = {
 	},
 }
 
+var _current_file_path: String = ""
+
 
 func _init() -> void:
 	DefaultStyle.make_read_only()
@@ -67,7 +72,11 @@ func _physics_process(_delta: float) -> void:
 func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 	if not is_level_enabled(level):
 		return
-	var timestamp: String = Time.get_time_string_from_system()
+	var datetime_dict: Dictionary = Time.get_datetime_dict_from_system()
+	var timestamp: String = Time.get_datetime_string_from_datetime_dict(
+		datetime_dict, false
+	)
+	#var timestamp: String = Time.get_time_string_from_system()
 	var style: LogStyle = get_log_style(level)
 	if can_print_log_level():
 		var level_string: String = LogLevel.keys().get(level)
@@ -77,6 +86,12 @@ func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 	elif level == LogLevel.ERROR or level == LogLevel.CRITICAL:
 		push_error("[%s]: %s" % [timestamp, message])
 	print_rich(style.get_stylized_text("[%s]: %s" % [timestamp, message]))
+	if _current_file_path.is_empty():
+		var file_name: String = _get_log_file_filename(datetime_dict)
+		_current_file_path = ProjectSettings.get_setting(
+			SettingPath.LOG_FILE_ROOT_DIR,
+			ProjectSettings.globalize_path("res://").trim_suffix("/")
+		) + "/" + file_name
 
 
 func can_print_log_level() -> bool:
@@ -108,6 +123,25 @@ func get_log_style(level: LogLevel) -> LogStyle:
 		get_style_setting(level, &"underlined"),
 		get_style_setting(level, &"strikethrough"),
 	)
+
+
+func _get_log_file_filename(datetime_dict: Dictionary) -> String:
+	var prefix: String = ProjectSettings.get_setting(
+		SettingPath.LOG_FILE_NAME_PREFIX, DEFAULT_LOG_FILE_NAME_PREFIX
+	)
+	if not prefix.is_valid_filename():
+		prefix = DEFAULT_LOG_FILE_NAME_PREFIX
+	var filename: String = "%s_%02d%02d%02d_%02d%02d%02d.%s" % [
+		prefix,
+		datetime_dict.get(&"year", ""),
+		datetime_dict.get(&"month", ""),
+		datetime_dict.get(&"day", ""),
+		datetime_dict.get(&"hour", ""),
+		datetime_dict.get(&"minute", ""),
+		datetime_dict.get(&"second", ""),
+		LOG_FILE_EXTENSION
+	]
+	return filename
 
 
 class LogStyle extends Resource:
