@@ -8,6 +8,10 @@ func _enter_tree() -> void:
 	for level: FDLog.LogLevel in FDLog.LogLevel.values():
 		_setup_custom_setting(FDLog.SettingPath.ENABLE_LEVEL[level], TYPE_BOOL, true)
 		_setup_style_settings(level)
+		_setup_custom_setting(
+			FDLog.SettingPath.LOG_FILE_ROOT_DIR,
+			TYPE_STRING, "", { &"hint": PROPERTY_HINT_DIR }
+		)
 	pass
 
 
