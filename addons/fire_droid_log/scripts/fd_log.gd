@@ -152,7 +152,6 @@ func _get_log_file_filename(datetime_dict: Dictionary) -> String:
 
 
 func _log_to_file(file_path: String, content: String) -> bool:
-	print("Logging to file: \"%s\" | Content: \"%s\"" % [file_path, content])
 	if not FileAccess.file_exists(file_path):
 		if not DirAccess.make_dir_recursive_absolute(file_path.get_base_dir()) == OK:
 			return false
