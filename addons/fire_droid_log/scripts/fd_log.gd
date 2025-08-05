@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: Dictionary[StringName, Variant] = {
 	&"strikethrough": DEFAULT_STRIKETHROUGH,
 }
 
+const _TIMESTAMP_T_CHAR_INDEX: int = 10
 
 var DefaultStyle: Dictionary[LogLevel, Dictionary] = {
 	LogLevel.TRACE: { &"color": Color.GRAY, &"italic": true },
@@ -76,7 +77,7 @@ func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 	var timestamp: String = Time.get_datetime_string_from_datetime_dict(
 		datetime_dict, false
 	)
-	#var timestamp: String = Time.get_time_string_from_system()
+	timestamp[_TIMESTAMP_T_CHAR_INDEX] = ' '
 	var style: LogStyle = get_log_style(level)
 	if can_print_log_level():
 		var level_string: String = LogLevel.keys().get(level)
@@ -92,6 +93,12 @@ func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 			SettingPath.LOG_FILE_ROOT_DIR,
 			ProjectSettings.globalize_path("res://").trim_suffix("/")
 		) + "/" + file_name
+	if not _log_to_file(_current_file_path, "[%s]: %s" % [timestamp, message]):
+		push_error("[%s]: [%s]: %s" % [
+			timestamp,
+			LogLevel.keys()[LogLevel.ERROR],
+			"Error while logging to file!"
+		])
 
 
 func can_print_log_level() -> bool:
@@ -142,6 +149,26 @@ func _get_log_file_filename(datetime_dict: Dictionary) -> String:
 		LOG_FILE_EXTENSION
 	]
 	return filename
+
+
+func _log_to_file(file_path: String, content: String) -> bool:
+	print("Logging to file: \"%s\" | Content: \"%s\"" % [file_path, content])
+	if not FileAccess.file_exists(file_path):
+		if not DirAccess.make_dir_recursive_absolute(file_path.get_base_dir()) == OK:
+			return false
+		var file = FileAccess.open(file_path, FileAccess.WRITE)
+		if file == null:
+			return false
+		file.store_line(content)
+		file.close()
+		return true
+	var file = FileAccess.open(file_path, FileAccess.READ_WRITE)
+	if file == null:
+		return false
+	file.seek_end()
+	file.store_line(content)
+	file.close()
+	return true
 
 
 class LogStyle extends Resource:
