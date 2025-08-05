@@ -91,7 +91,7 @@ func log_message(message: String, level: LogLevel = LogLevel.INFO) -> void:
 		var file_name: String = _get_log_file_filename(datetime_dict)
 		_current_file_path = ProjectSettings.get_setting(
 			SettingPath.LOG_FILE_ROOT_DIR,
-			ProjectSettings.globalize_path("res://").trim_suffix("/")
+			OS.get_user_data_dir()
 		) + "/" + file_name
 	if not _log_to_file(_current_file_path, "[%s]: %s" % [timestamp, message]):
 		push_error("[%s]: [%s]: %s" % [
